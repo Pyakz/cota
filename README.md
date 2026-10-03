@@ -11,11 +11,11 @@ Tailwind CSS, Vitest.
 Requirements: Node 22+, Docker (for local Postgres).
 
 ```bash
-docker compose up -d                     # local Postgres 16 on port 5432
 npm install
-npm run db:migrate                       # apply the schema in drizzle/
+docker compose up -d                     # local Postgres 16 on port 5432 (needed before db:push/db:seed)
+npm run db:push                          # create/update the schema from src/db/schema.ts
 npm run db:seed                          # load the assessment data (safe to re-run)
-npm run dev                              # http://localhost:3000
+npm run dev                              # starts Postgres again (no-op if running), then http://localhost:3000
 npm test                                 # unit tests
 ```
 
