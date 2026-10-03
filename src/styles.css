@@ -376,3 +376,12 @@ a {
     cursor: not-allowed;
   }
 }
+
+/* Page changes cross-fade (see defaultViewTransition in src/router.tsx). Skip the animation when the user asks for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

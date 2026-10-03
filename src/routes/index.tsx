@@ -1,5 +1,9 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { PackageSearch, SearchX } from 'lucide-react'
 import { useState } from 'react'
+import { Bone } from '../components/Bone'
+import { EmptyState } from '../components/EmptyState'
+import { Skeleton } from '../components/ui/skeleton'
 import { searchInventoryFn } from '../server/inventory'
 
 // The query lives in the URL (?q=...) so a search can be bookmarked or shared.
@@ -9,6 +13,8 @@ export const Route = createFileRoute('/')({
   }),
   loaderDeps: ({ search }) => ({ q: search.q }),
   loader: ({ deps }) => searchInventoryFn({ data: { query: deps.q } }),
+  head: () => ({ meta: [{ title: 'Inventory search · CoTa Warehouse' }] }),
+  pendingComponent: SearchSkeleton,
   component: InventorySearch,
 })
 
@@ -54,8 +60,16 @@ function InventorySearch() {
         </button>
       </form>
 
-      {q !== '' && results.length === 0 && (
-        <p className="mt-6 text-gray-600">No products match “{q}”.</p>
+      {results.length === 0 && q !== '' && (
+        <EmptyState icon={SearchX} title={`No products match “${q}”`}>
+          Check the SKU, or try part of the product name.
+        </EmptyState>
+      )}
+
+      {results.length === 0 && q === '' && (
+        <EmptyState icon={PackageSearch} title="No products yet">
+          Products show up here once they have been added to the system.
+        </EmptyState>
       )}
 
       <ul className="mt-6 space-y-4">
@@ -97,6 +111,79 @@ function InventorySearch() {
               <div>
                 <div className="text-sm text-gray-600">Total units</div>
                 <div className="text-2xl font-bold tabular-nums">{r.totalUnits}</div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+
+// Same markup as the page, with text replaced by placeholders, so the layout doesn't move when data arrives.
+function SearchSkeleton() {
+  return (
+    <main aria-busy="true" className="mx-auto max-w-xl px-4 py-6 font-sans">
+      <span className="sr-only">Loading</span>
+      <h1 className="text-2xl font-bold">
+        <Bone w="w-56" />
+      </h1>
+      <nav className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-base">
+        <Bone w="w-56" />
+        <Bone w="w-32" />
+      </nav>
+
+      <div className="mt-4 flex gap-2">
+        <Skeleton className="h-12 min-w-0 flex-1 bg-gray-200" />
+        <Skeleton className="h-12 w-28 bg-gray-200" />
+      </div>
+
+      <ul className="mt-6 space-y-4">
+        {[0, 1].map((i) => (
+          <li key={i} className="rounded-lg border border-gray-300 bg-white p-4">
+            <div className="font-mono text-sm text-gray-600">
+              <Bone w="w-24" />
+            </div>
+            <div className="text-xl font-semibold">
+              <Bone w="w-48" />
+            </div>
+            <div className="text-gray-700">
+              <Bone w="w-36" />
+            </div>
+
+            <table className="mt-3 w-full text-left text-base">
+              <thead className="text-sm text-gray-600">
+                <tr>
+                  <th className="py-1 font-medium">Location</th>
+                  <th className="py-1 text-right font-medium">Cases</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[0, 1].map((row) => (
+                  <tr key={row} className="border-t border-gray-200">
+                    <td className="py-2">
+                      <Bone w="w-20" />
+                    </td>
+                    <td className="py-2 text-right">
+                      <Bone w="w-8" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-gray-100 p-3">
+              <div>
+                <div className="text-sm text-gray-600">Total cases</div>
+                <div className="text-2xl font-bold">
+                  <Bone w="w-12" />
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Total units</div>
+                <div className="text-2xl font-bold">
+                  <Bone w="w-16" />
+                </div>
               </div>
             </div>
           </li>

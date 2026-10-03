@@ -1,10 +1,14 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { PackageX, Warehouse } from 'lucide-react'
 import { useId, useState } from 'react'
 import { planPullSource, planReplenishment } from '../lib/replenish'
 import type { LocationStock } from '../lib/search'
+import { Bone } from '../components/Bone'
+import { EmptyState } from '../components/EmptyState'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { Skeleton } from '../components/ui/skeleton'
 import { getShelfFn, getShelfOptionsFn } from '../server/shelves'
 
 export const Route = createFileRoute('/replenish')({
@@ -19,6 +23,8 @@ export const Route = createFileRoute('/replenish')({
     ])
     return { shelf, options }
   },
+  head: () => ({ meta: [{ title: 'Open-shelf replenishment · CoTa Warehouse' }] }),
+  pendingComponent: ReplenishSkeleton,
   component: Replenish,
 })
 
@@ -37,25 +43,35 @@ function Replenish() {
 
       <h1 className="mt-3 text-2xl font-bold">Open-shelf replenishment</h1>
 
-      <Select value={sku} onValueChange={(next) => navigate({ search: { sku: next } })}>
-        <SelectTrigger
-          aria-label="SKU"
-          className="mt-4 h-12 w-full rounded-md border-gray-400 bg-white px-3 font-mono text-lg data-[size=default]:h-12"
-        >
-          <SelectValue placeholder="Choose SKU" />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o.sku} value={o.sku} className="py-2 text-base">
-              <span className="font-mono">{o.sku}</span> · {o.name}
-              {o.storedCases === 0 && <span className="ml-2 text-red-700">· out of stock</span>}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {options.length === 0 && (
+        <EmptyState icon={Warehouse} title="No open shelves yet">
+          Shelves show up here once they have been set up for a product.
+        </EmptyState>
+      )}
 
-      {!shelf && (
-        <p className="mt-6 text-gray-600">No open shelf found for “{sku}”.</p>
+      {options.length > 0 && (
+        <Select value={sku} onValueChange={(next) => navigate({ search: { sku: next } })}>
+          <SelectTrigger
+            aria-label="SKU"
+            className="mt-4 h-12 w-full rounded-md border-gray-400 bg-white px-3 font-mono text-lg data-[size=default]:h-12"
+          >
+            <SelectValue placeholder="Choose SKU" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o.sku} value={o.sku} className="py-2 text-base">
+                <span className="font-mono">{o.sku}</span> · {o.name}
+                {o.storedCases === 0 && <span className="ml-2 text-red-700">· out of stock</span>}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {!shelf && options.length > 0 && (
+        <EmptyState icon={PackageX} title={`No open shelf for “${sku}”`}>
+          Choose another SKU from the list.
+        </EmptyState>
       )}
 
       {shelf && <ShelfResult key={shelf.sku} shelf={shelf} />}
@@ -266,5 +282,54 @@ function ShelfPlan({
         </div>
       )}
     </>
+  )
+}
+
+// Same markup as the page, with text replaced by placeholders, so the layout doesn't move when data arrives.
+function ReplenishSkeleton() {
+  return (
+    <main aria-busy="true" className="mx-auto max-w-xl px-4 py-6 font-sans">
+      <span className="sr-only">Loading</span>
+      <nav className="text-base">
+        <Bone w="w-40" />
+      </nav>
+
+      <h1 className="mt-3 text-2xl font-bold">
+        <Bone w="w-80" />
+      </h1>
+
+      <Skeleton className="mt-4 h-12 w-full bg-gray-200" />
+
+      <section className="mt-6 rounded-lg border border-gray-300 bg-white p-4">
+        <div className="font-mono text-sm text-gray-600">
+          <Bone w="w-24" />
+        </div>
+        <div className="text-xl font-semibold">
+          <Bone w="w-48" />
+        </div>
+        <div className="text-gray-700">
+          <Bone w="w-36" />
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {[0, 1].map((i) => (
+            <div key={i}>
+              <div className="text-base">
+                <Bone w="w-28" />
+              </div>
+              <Skeleton className="mt-1 h-12 w-full bg-gray-200" />
+            </div>
+          ))}
+        </div>
+
+        <Skeleton className="mt-4 h-6 w-full bg-gray-200" />
+        <div className="mt-1 font-mono text-lg">
+          <Bone w="w-64" />
+        </div>
+        <div className="mt-4 text-2xl font-bold">
+          <Bone w="w-72" />
+        </div>
+      </section>
+    </main>
   )
 }

@@ -28,7 +28,8 @@ DATABASE_URL=postgres://cota:cota@localhost:5432/cota
 Production build: `npm run build`, then `node .output/server/index.mjs` with `DATABASE_URL`
 set. The app is a standard Nitro server, so it runs on any Node-compatible host.
 
-**Deployed URL:** not deployed yet. See "Deployment status" below.
+**Deployed URL:** none. The app is not deployed anywhere yet, so `https://cota-test.vercel.app/` is not
+this app and should not be used. See "Deployment status" below.
 
 ## Screens
 
@@ -113,13 +114,15 @@ SKUs other than TURTLE-01 are demo values, not from the brief.
 
 ## Deployment status
 
-The app builds and runs locally. Deployment needs a Postgres database (Neon or Supabase) and a
-Netlify or Vercel account, which I haven't set up. Steps:
+The app builds and runs locally, but it is **not deployed**. There is no live URL yet.
+`https://cota-test.vercel.app/` is not a deployment of this project. Earlier Cloudflare deploy
+setup has been removed. Deployment needs a Postgres database (Neon or Supabase) and a host account
+(Netlify or Vercel), which are not set up. Steps:
 
 1. Create a hosted Postgres database and set its URL as `DATABASE_URL` in the host's environment.
 2. Run `npm run db:migrate` and `npm run db:seed` against that database.
 3. Deploy the repo. Build command `npm run build`. Set the host's Nitro preset if it's not Node.
-4. Put the live URL here.
+4. Put the live URL here, replacing "none" above.
 
 ## Part 4: AI video design (written answer)
 
