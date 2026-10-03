@@ -34,7 +34,7 @@ set. The app is a standard Nitro server, so it runs on any Node-compatible host.
 
 | Route | What it does |
 |---|---|
-| `/` | Search by SKU or product name (case-insensitive, partial match). Shows every location, total cases, total units. The query is in the URL. |
+| `/` | Search by SKU or product name (case-insensitive, partial match). Shows every location, total cases, total units. A blank query lists all products. The query is in the URL. |
 | `/replenish` | Pick a SKU with an open shelf. Shows capacity, units on shelf, units needed, complete cases to pull, and what to do with any leftover units. |
 | `/pick` | Enter SKU and case lines. Shows a numbered walk order by aisle, rack, shelf. Insufficient stock is reported as an error, with no partial picks for that SKU. The request is in the URL. |
 
@@ -125,62 +125,35 @@ Netlify or Vercel account, which I haven't set up. Steps:
 
 The core rule: AI proposes, a human approves, and only approved results change inventory.
 
-**1. Study and standardize scanning.** Before building anything I'd watch several workers count one
-aisle and time each step. I'd then standardize one routine: scan the location barcode, then film a
-slow, steady pan of the shelf face at a fixed height. Workers get a short checklist, and we measure
-how often the routine is followed.
+1. **Study and standardize the scanning process.** Watch workers first, then standardize one routine. Workers differ: one person films too fast, another films from far away. Consistent videos make the AI far more accurate.
+2. **Capture and processing.** Upload the video, sample the sharpest frames, and let a vision model read SKUs and count cases in the background.
+3. **Location context.** It comes from the scanned barcode, never from the AI. No barcode, no upload.
+4. **Output structure.** Strict JSON per location: SKU, count, confidence, and evidence frames. Invalid output goes to review.
+5. **Measuring accuracy.** Compare against hand counts, and measure SKU recognition and counting separately.
+6. **Uncertain results.** Low confidence or a mismatch with the system goes to review. In the first version, a human approves everything.
+7. **Protecting inventory.** The AI writes only to a staging table. Only a human approval changes inventory, so the reviewer's approve or reject is the gate.
+8. **What to save.** Video, AI output, model version, corrections, and who approved what and when.
+9. **Review and correction.** One card per location showing the AI count next to the system count, with Approve or Correct:
 
-**2. Capture and processing.** The phone uploads the video to object storage with the location
-attached. A background job samples frames, for example one per second, and keeps the sharpest. A
-vision model reads SKU labels and counts visible cases. Processing runs asynchronously, so the
-worker isn't blocked while it runs.
+   ```
+   ┌─────────────────────────────┐
+   │ A4-R1-S2 · TURTLE-01        │
+   │ AI saw: 6 cases             │
+   │ System says: 7 cases        │
+   │                             │
+   │ [ Approve ]   [ Correct ]   │
+   └─────────────────────────────┘
+   ```
 
-**3. Location context.** The location comes from the barcode the worker scanned, never from the AI.
-Uploads without a location are rejected, so the model never has to guess where the shelf is.
-
-**4. Output structure.** For each location the model returns strict JSON: `sku`, `case_count`,
-a confidence value for each field, and the IDs of the frames it used as evidence. The server
-validates this against a schema. Output that doesn't validate goes to review and isn't dropped.
-
-**5. Measuring accuracy.** I'd hand-count a labelled set of videos to get ground truth. Then I'd
-measure SKU recognition (precision and recall) and count accuracy (exact-match rate and average
-error in cases) separately, since they fail differently. I'd break the results down by SKU, lighting,
-and camera angle.
-
-**6. Uncertain results.** Each field has a confidence threshold. A result goes to a review queue if
-its confidence is low, if its SKU doesn't match the system record, or if its count differs from the
-system by more than a set tolerance. In the first version nothing is accepted automatically.
-
-**7. Protecting inventory.** AI output is written to a staging table, separate from inventory. Only
-an approval action can change inventory, and it writes a movement record. The AI has no write path
-to inventory tables.
-
-**8. What to save.** The original video, the sampled frames, the raw model output and model version,
-the system count at the time, the human's correction, the approver, and timestamps for each step.
-This gives an audit trail and labelled data for future evaluation.
-
-**9. Review and correction.** The review screen is phone-first, with one card per location. Each card
-shows the scanned location, the AI's SKU and count with evidence frames, and the system count side by
-side, with Approve and Correct buttons. Correct opens a SKU picker and a number input. Each decision
-is recorded.
-
-**10. Prototype first.** I'd start with still photos of one aisle (about 10 locations) and the review
-screen, with no video and no inventory writes. That tests the riskiest parts, model accuracy and the
-review workflow, at a fraction of the cost. Video upload comes only after accuracy meets an agreed
-target.
+10. **Prototype first.** Start with photos of one aisle plus the review screen. Add video only once accuracy is good enough.
 
 ## Part 5: Offline reliability (written answer)
 
-**Lost work.** Every action (count, pick, correction) is saved to IndexedDB on the device first, then
-synced to the server in the background. The screen shows "saved on this device" until the server
-confirms, so closing the page or losing signal doesn't lose anything.
+1. **Lost work.** Save every action on the phone first, then sync when the internet comes back.
+2. **Duplicates.** Every action gets a unique ID, so if the phone sends it twice, the server applies it only once.
+3. **Confusing results.** Record changes like "picked 3 cases," not "set to 15." Show what's still waiting to sync, and let a person resolve real conflicts. For example, Ana's phone saves "minus 3" and Ben's saves "minus 2." The server applies both: 18 − 3 − 2 = 13. The order doesn't matter, so the result is always correct.
 
-**Duplicate changes.** Each action gets a UUID v7 generated on the device when it's created. The
-server stores the IDs it has processed. A retry with an ID it has already seen returns the original
-result without applying the change again, so the sync is safe to repeat.
+---
 
-**Confusing results.** Stock changes are recorded as movements, such as "picked 3 cases from
-A1-R2-S1", not as overwritten totals. Replaying or reordering the same movements gives the same
-result. The app shows how many changes are waiting to sync and how old the data on screen is. When two
-offline changes truly conflict, such as two people taking the last cases, the app flags the line for
-a person to resolve instead of guessing.
+Honestly, with this scale you can formulate solutions quickly, even with AI generating answers, but there are still edge cases to consider before building the whole app and infrastructure.
+# cota
