@@ -10,8 +10,6 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
-    "cf-typegen": "wrangler types",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -63,8 +61,7 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
-    "vitest": "^5.0.3",
-    "wrangler": "^4.147.0"
+    "vitest": "^5.0.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
