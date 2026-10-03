@@ -47,8 +47,14 @@ describe('searchInventory', () => {
     ])
   })
 
-  it('returns nothing for a blank query', () => {
-    expect(searchInventory('   ', products, inventory)).toEqual([])
+  it('returns every product, sorted by SKU, for a blank query', () => {
+    const results = searchInventory('   ', products, inventory)
+    expect(results.map((r) => r.sku)).toEqual([
+      'ALIEN-04',
+      'MOOSE-03',
+      'SHARK-02',
+      'TURTLE-01',
+    ])
   })
 
   it('returns nothing when no SKU or name matches', () => {

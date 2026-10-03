@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PickRouteImport } from './routes/pick'
 import { Route as ReplenishRouteImport } from './routes/replenish'
+import { Route as InteractiveReplenishRouteImport } from './routes/interactive/replenish'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const ReplenishRoute = ReplenishRouteImport.update({
   path: '/replenish',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InteractiveReplenishRoute = InteractiveReplenishRouteImport.update({
+  id: '/interactive/replenish',
+  path: '/interactive/replenish',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/pick': typeof PickRoute
   '/replenish': typeof ReplenishRoute
+  '/interactive/replenish': typeof InteractiveReplenishRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pick': typeof PickRoute
   '/replenish': typeof ReplenishRoute
+  '/interactive/replenish': typeof InteractiveReplenishRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/pick': typeof PickRoute
   '/replenish': typeof ReplenishRoute
+  '/interactive/replenish': typeof InteractiveReplenishRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/pick' | '/replenish'
+  fullPaths: '/' | '/pick' | '/replenish' | '/interactive/replenish'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/pick' | '/replenish'
-  id: '__root__' | '/' | '/pick' | '/replenish'
+  to: '/' | '/pick' | '/replenish' | '/interactive/replenish'
+  id: '__root__' | '/' | '/pick' | '/replenish' | '/interactive/replenish'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PickRoute: typeof PickRoute
   ReplenishRoute: typeof ReplenishRoute
+  InteractiveReplenishRoute: typeof InteractiveReplenishRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReplenishRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/interactive/replenish': {
+      id: '/interactive/replenish'
+      path: '/interactive/replenish'
+      fullPath: '/interactive/replenish'
+      preLoaderRoute: typeof InteractiveReplenishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PickRoute: PickRoute,
   ReplenishRoute: ReplenishRoute,
+  InteractiveReplenishRoute: InteractiveReplenishRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

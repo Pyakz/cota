@@ -1,7 +1,10 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { buildPickList, formatRequest, parseRequest, type PickRequest } from '../lib/picklist'
+import { RouteDialog } from '../components/pick/RouteDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { aislesFromLocations } from '../lib/routePath'
+import { searchInventoryFn } from '../server/inventory'
 import { getPickDataFn, getProductOptionsFn } from '../server/picklist'
 
 const DEFAULT_REQUEST = 'TURTLE-01:3,SHARK-02:2,ALIEN-04:1'
@@ -17,7 +20,15 @@ export const Route = createFileRoute('/pick')({
     const skus = [...new Set(requests.map((r) => r.sku))]
     const data = skus.length === 0 ? { products: [], inventory: [] } : await getPickDataFn({ data: { skus } })
     const options = await getProductOptionsFn()
-    return { requests, options, result: buildPickList(requests, data.products, data.inventory) }
+    // A blank query returns every product with its locations, so the route map covers the whole warehouse.
+    const stock = await searchInventoryFn({ data: { query: '' } })
+    const locations = stock.flatMap((p) => p.locations.map((l) => l.location))
+    return {
+      requests,
+      options,
+      result: buildPickList(requests, data.products, data.inventory),
+      aisles: aislesFromLocations(locations),
+    }
   },
   component: PickList,
 })
@@ -25,7 +36,7 @@ export const Route = createFileRoute('/pick')({
 type DraftLine = { sku: string; cases: string }
 
 function PickList() {
-  const { requests, options, result } = Route.useLoaderData()
+  const { requests, options, result, aisles } = Route.useLoaderData()
   const navigate = useNavigate({ from: '/pick' })
 
   const [draft, setDraft] = useState<DraftLine[]>(() =>
@@ -156,6 +167,7 @@ function PickList() {
               </li>
             ))}
           </ol>
+          <RouteDialog picks={result.lines} aisles={aisles} />
         </section>
       )}
 

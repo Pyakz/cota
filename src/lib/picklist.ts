@@ -1,5 +1,5 @@
 import { compareLocations } from './location'
-import type { InventoryRow, ProductRow } from './search'
+import type { InventoryRow, LocationStock, ProductRow } from './search'
 
 export type PickRequest = { sku: string; cases: number }
 
@@ -34,6 +34,26 @@ export function formatRequest(requests: PickRequest[]): string {
   return requests.map((r) => `${r.sku}:${r.cases}`).join(',')
 }
 
+// Takes cases from the lowest aisle first, spilling into the next location as needed.
+// Returns fewer than `wanted` cases in total only when stock runs out.
+export function allocateCases(stock: LocationStock[], wanted: number): LocationStock[] {
+  const allocations: LocationStock[] = []
+  let remaining = wanted
+
+  const sorted = stock
+    .filter((row) => row.cases > 0)
+    .sort((a, b) => compareLocations(a.location, b.location))
+
+  for (const row of sorted) {
+    if (remaining === 0) break
+    const take = Math.min(row.cases, remaining)
+    allocations.push({ location: row.location, cases: take })
+    remaining -= take
+  }
+
+  return allocations
+}
+
 // Builds the pick list for all requests. A SKU that cannot be filled in full gets an error and no lines.
 export function buildPickList(
   requests: PickRequest[],
@@ -62,25 +82,22 @@ export function buildPickList(
     }
 
     // Lowest aisle first, so the picker walks the warehouse in one direction.
-    const stock = inventory
-      .filter((row) => row.sku === sku && row.cases > 0)
-      .sort((a, b) => compareLocations(a.location, b.location))
+    const allocations = allocateCases(
+      inventory.filter((row) => row.sku === sku),
+      wanted,
+    )
 
-    const available = stock.reduce((sum, row) => sum + row.cases, 0)
-    if (available < wanted) {
+    const allocated = allocations.reduce((sum, row) => sum + row.cases, 0)
+    if (allocated < wanted) {
       errors.push({
         sku,
-        message: `${sku}: requested ${wanted}, only ${available} in stock`,
+        message: `${sku}: requested ${wanted}, only ${allocated} in stock`,
       })
       continue
     }
 
-    let remaining = wanted
-    for (const row of stock) {
-      if (remaining === 0) break
-      const take = Math.min(row.cases, remaining)
-      unsorted.push({ sku, name: product.name, location: row.location, cases: take })
-      remaining -= take
+    for (const row of allocations) {
+      unsorted.push({ sku, name: product.name, ...row })
     }
   }
 

@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
 import { inventory, products, shelves } from '../db/schema.ts'
 
-// Returns the open-shelf row for one SKU, or null if the SKU has no shelf.
+// Returns the open-shelf row for one SKU plus its storage locations, or null if the SKU has no shelf.
 // Only fetches rows; the replenishment maths lives in src/lib/replenish.ts.
 export const getShelfFn = createServerFn({ method: 'GET' })
   .validator((data: { sku: string }) => ({
@@ -22,7 +22,15 @@ export const getShelfFn = createServerFn({ method: 'GET' })
       .innerJoin(products, eq(shelves.productId, products.id))
       .where(eq(products.sku, data.sku))
 
-    return row ?? null
+    if (!row) return null
+
+    const locations = await db
+      .select({ location: inventory.location, cases: inventory.cases })
+      .from(inventory)
+      .innerJoin(products, eq(inventory.productId, products.id))
+      .where(eq(products.sku, data.sku))
+
+    return { ...row, locations }
   })
 
 // SKUs that have an open shelf, for the replenish dropdown.

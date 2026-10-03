@@ -54,10 +54,6 @@ function InventorySearch() {
         </button>
       </form>
 
-      {q === '' && (
-        <p className="mt-6 text-gray-600">Enter a SKU or product name to search.</p>
-      )}
-
       {q !== '' && results.length === 0 && (
         <p className="mt-6 text-gray-600">No products match “{q}”.</p>
       )}

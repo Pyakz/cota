@@ -15,18 +15,18 @@ export type SearchResult = {
 }
 
 // Case-insensitive partial match on SKU or product name.
-// A blank query matches nothing, so the screen starts empty instead of listing everything.
+// A blank query matches every product, so the screen opens with the full list.
 export function searchInventory(
   query: string,
   products: ProductRow[],
   inventory: InventoryRow[],
 ): SearchResult[] {
   const needle = query.trim().toLowerCase()
-  if (needle === '') return []
 
   return products
     .filter(
       (p) =>
+        needle === '' ||
         p.sku.toLowerCase().includes(needle) ||
         p.name.toLowerCase().includes(needle),
     )

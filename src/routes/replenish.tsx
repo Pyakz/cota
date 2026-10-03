@@ -1,5 +1,9 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { planReplenishment } from '../lib/replenish'
+import { useId, useState } from 'react'
+import { planPullSource, planReplenishment } from '../lib/replenish'
+import type { LocationStock } from '../lib/search'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { getShelfFn, getShelfOptionsFn } from '../server/shelves'
 
@@ -54,18 +58,49 @@ function Replenish() {
         <p className="mt-6 text-gray-600">No open shelf found for “{sku}”.</p>
       )}
 
-      {shelf && <ShelfResult shelf={shelf} />}
+      {shelf && <ShelfResult key={shelf.sku} shelf={shelf} />}
+
+      {shelf && (
+        <Link to="/interactive/replenish" search={{ sku }} className="mt-4 inline-block text-sm text-blue-700 underline">
+          See it step by step →
+        </Link>
+      )}
     </main>
   )
 }
 
-function ShelfResult({
-  shelf,
-}: {
-  shelf: { sku: string; name: string; unitsPerCase: number; capacityUnits: number; currentUnits: number }
-}) {
-  const plan = planReplenishment(shelf)
-  const alreadyFull = plan.neededUnits === 0
+type Shelf = {
+  sku: string
+  name: string
+  unitsPerCase: number
+  capacityUnits: number
+  currentUnits: number
+  locations: LocationStock[]
+}
+
+// Only plain digits count as a whole number. Empty or decimal input returns null.
+function parseWhole(text: string): number | null {
+  const trimmed = text.trim()
+  return /^\d+$/.test(trimmed) ? Number(trimmed) : null
+}
+
+// Inputs start from the DB values. This is a calculator only: nothing is saved.
+// The parent keys this component on sku, so the inputs reset when the SKU changes.
+function ShelfResult({ shelf }: { shelf: Shelf }) {
+  const [capacityText, setCapacityText] = useState(String(shelf.capacityUnits))
+  const [onShelfText, setOnShelfText] = useState(String(shelf.currentUnits))
+
+  const capacity = parseWhole(capacityText)
+  const onShelf = parseWhole(onShelfText)
+
+  const capacityError =
+    capacity === null ? 'Enter whole numbers' : capacity < 1 ? 'Capacity must be at least 1' : null
+  const onShelfError =
+    onShelf === null
+      ? 'Enter whole numbers'
+      : capacity !== null && onShelf > capacity
+        ? "On shelf can't be more than capacity"
+        : null
 
   return (
     <section className="mt-6 rounded-lg border border-gray-300 bg-white p-4">
@@ -73,21 +108,140 @@ function ShelfResult({
       <div className="text-xl font-semibold">{shelf.name}</div>
       <div className="text-gray-700">{shelf.unitsPerCase} units per case</div>
 
-      <dl className="mt-4 grid grid-cols-3 gap-2 rounded-md bg-gray-100 p-3 text-center">
-        <Stat label="Capacity" value={shelf.capacityUnits} />
-        <Stat label="On shelf" value={shelf.currentUnits} />
-        <Stat label="Needed" value={plan.neededUnits} />
-      </dl>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <NumberField
+          label="Shelf capacity"
+          min={1}
+          value={capacityText}
+          onChange={setCapacityText}
+          error={capacityError}
+        />
+        <NumberField
+          label="On shelf now"
+          min={0}
+          value={onShelfText}
+          onChange={setOnShelfText}
+          error={onShelfError}
+        />
+      </div>
+
+      {capacity !== null && onShelf !== null && capacityError === null && onShelfError === null && (
+        <ShelfPlan shelf={shelf} capacityUnits={capacity} currentUnits={onShelf} />
+      )}
+    </section>
+  )
+}
+
+function NumberField({
+  label,
+  min,
+  value,
+  onChange,
+  error,
+}: {
+  label: string
+  min: number
+  value: string
+  onChange: (next: string) => void
+  error: string | null
+}) {
+  const id = useId()
+
+  return (
+    <div>
+      <Label htmlFor={id} className="text-base">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={min}
+        step="1"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={error !== null}
+        className="mt-1 h-12 text-lg tabular-nums md:text-lg"
+      />
+      {error && <p className="mt-1 text-sm text-red-700">{error}</p>}
+    </div>
+  )
+}
+
+function ShelfPlan({
+  shelf,
+  capacityUnits,
+  currentUnits,
+}: {
+  shelf: Shelf
+  capacityUnits: number
+  currentUnits: number
+}) {
+  const storedCases = shelf.locations.reduce((sum, row) => sum + row.cases, 0)
+  const plan = planReplenishment({
+    capacityUnits,
+    currentUnits,
+    unitsPerCase: shelf.unitsPerCase,
+    storedCases,
+  })
+  const alreadyFull = plan.neededUnits === 0
+  const nothingInStorage = !alreadyFull && storedCases === 0
+  const source = planPullSource(shelf.locations, plan.casesToPull)
+  const addedUnits = plan.unitsAfter - currentUnits
+
+  return (
+    <>
+      <div className="mt-4">
+        <div
+          role="img"
+          aria-label={`${currentUnits} of ${capacityUnits} units on shelf, ${addedUnits} units added`}
+          className="flex h-6 w-full overflow-hidden rounded-md bg-gray-200"
+        >
+          <div className="bg-gray-500" style={{ width: `${(currentUnits / capacityUnits) * 100}%` }} />
+          <div className="bg-blue-600" style={{ width: `${(addedUnits / capacityUnits) * 100}%` }} />
+        </div>
+        <p className="mt-1 font-mono text-lg tabular-nums">
+          {currentUnits} / {capacityUnits} → {plan.unitsAfter} · {plan.neededUnits} needed
+        </p>
+      </div>
 
       {alreadyFull ? (
         <p className="mt-4 text-lg font-semibold">The shelf is full. Pull nothing.</p>
       ) : (
         <div className="mt-4 space-y-3">
-          <p className="text-2xl font-bold">
-            Pull {plan.casesToPull} {plan.casesToPull === 1 ? 'case' : 'cases'} ({plan.unitsPulled} units).
-          </p>
+          {nothingInStorage ? (
+            <p className="text-2xl font-bold">Nothing in storage to pull.</p>
+          ) : (
+            <p className="text-2xl font-bold">
+              Pull {plan.casesToPull} {plan.casesToPull === 1 ? 'case' : 'cases'} ({plan.unitsPulled} units).
+            </p>
+          )}
 
-          {plan.leftoverUnits > 0 ? (
+          {source.length === 1 && (
+            <p className="text-lg">
+              From <span className="font-mono">{source[0].location}</span>
+            </p>
+          )}
+          {source.length > 1 && (
+            <div className="text-base">
+              <p>No single location has enough. Split pull:</p>
+              <ul className="mt-1 space-y-1">
+                {source.map((s) => (
+                  <li key={s.location}>
+                    <span className="font-mono">{s.location}</span>: {s.cases} {s.cases === 1 ? 'case' : 'cases'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {plan.shortOfStock && (
+            <p className="font-semibold text-red-700">
+              Only {storedCases} cases in storage. The shelf will reach {plan.unitsAfter} / {capacityUnits}.
+            </p>
+          )}
+
+          {plan.leftoverUnits > 0 && (
             <div className="rounded-md border border-amber-500 bg-amber-50 p-3 text-base">
               <p className="font-semibold">
                 {plan.leftoverUnits} units won’t fit. Return them to storage as a partial case.
@@ -97,27 +251,20 @@ function ShelfResult({
                 Label it and note it by hand.
               </p>
             </div>
-          ) : (
+          )}
+
+          {!plan.shortOfStock && plan.leftoverUnits === 0 && (
             <p className="text-base text-gray-800">The shelf will be exactly full. No partial case.</p>
           )}
 
-          {plan.neededUnits >= shelf.unitsPerCase && (
+          {plan.leftoverUnits > 0 && plan.casesIfRoundedDown >= 1 && (
             <p className="text-base text-gray-600">
-              Pulling only {Math.floor(plan.neededUnits / shelf.unitsPerCase)} complete cases would leave the shelf{' '}
+              Pulling only {plan.casesIfRoundedDown} complete cases would leave the shelf{' '}
               {plan.unitsShortIfRoundedDown} units short.
             </p>
           )}
         </div>
       )}
-    </section>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <dt className="text-sm text-gray-600">{label}</dt>
-      <dd className="text-2xl font-bold tabular-nums">{value}</dd>
-    </div>
+    </>
   )
 }
