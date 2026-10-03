@@ -25,8 +25,8 @@ export function RouteWalk({ picks, aisles }: Props) {
   const casesInCart = picks.slice(0, walk.reached).reduce((sum, line) => sum + line.cases, 0)
 
   return (
-    <section className="mt-4 grid gap-4 md:grid-cols-2 md:items-start">
-      <div className="space-y-4">
+    <section className="mt-4 grid gap-5 md:grid-cols-2 md:items-start">
+      <div className="space-y-3">
         <RouteMap
           aisles={aisles}
           pickedAisles={pickedAisles}
@@ -37,21 +37,21 @@ export function RouteWalk({ picks, aisles }: Props) {
 
         <p
           aria-live="polite"
-          className="min-h-16 rounded-md border border-gray-300 bg-gray-50 p-4 text-lg leading-snug"
+          className="min-h-16 rounded-2xl bg-white p-4 text-base leading-snug text-slate-800 shadow-sm ring-1 ring-slate-200"
         >
           {caption(walk.status, picks, walk.reached, casesInCart)}
         </p>
 
         <Button
-          className="h-10 rounded-md border border-gray-900 bg-white px-4 text-base font-semibold text-gray-900 hover:bg-gray-100 disabled:opacity-50"
+          className="h-12 w-full rounded-xl bg-slate-900 text-base font-semibold text-white hover:bg-slate-800 active:scale-[0.98] disabled:bg-slate-300 disabled:text-slate-500"
           onClick={walk.walk}
           disabled={walk.status === 'walking'}
         >
-          {walk.status === 'idle' ? 'Walk' : 'Walk again'}
+          {walk.status === 'idle' ? 'Walk the route' : 'Walk again'}
         </Button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <StatCard label="Cases in cart" value={String(casesInCart)} />
 
         <ol className="space-y-2">
@@ -60,22 +60,24 @@ export function RouteWalk({ picks, aisles }: Props) {
             return (
               <li
                 key={`${line.location}-${line.sku}`}
-                className={`flex items-center gap-3 rounded-lg border p-3 ${done ? 'border-green-600 bg-green-50' : 'border-gray-300 bg-white'}`}
+                className={`flex items-center gap-3 rounded-2xl p-3 shadow-sm ring-1 ${done ? 'bg-emerald-50 ring-emerald-300' : 'bg-white ring-slate-200'}`}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-900 font-bold text-white tabular-nums">
+                <span
+                  className={`num flex size-9 shrink-0 items-center justify-center rounded-full font-bold text-white ${done ? 'bg-emerald-600' : 'bg-slate-900'}`}
+                >
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-mono font-semibold">{line.location}</div>
-                  <div className="text-sm text-gray-700">
+                  <div className="font-mono font-semibold text-slate-900">{line.location}</div>
+                  <div className="truncate text-sm text-slate-600">
                     {line.sku} · {line.name}
                   </div>
                 </div>
-                <div className="text-right text-lg font-bold tabular-nums">
+                <div className="num text-right text-lg font-bold text-slate-900">
                   {line.cases}
-                  <span className="ml-1 text-sm font-normal text-gray-600">{line.cases === 1 ? 'case' : 'cases'}</span>
+                  <span className="ml-1 text-xs font-normal text-slate-500">{line.cases === 1 ? 'case' : 'cases'}</span>
                 </div>
-                {done && <Check aria-label="Picked" className="h-6 w-6 shrink-0 text-green-700" />}
+                {done && <Check aria-label="Picked" className="size-5 shrink-0 text-emerald-700" />}
               </li>
             )
           })}
@@ -87,9 +89,9 @@ export function RouteWalk({ picks, aisles }: Props) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-300 bg-white p-4">
-      <div className="text-sm text-gray-600">{label}</div>
-      <div className="text-3xl font-bold tabular-nums">{value}</div>
+    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <div className="text-sm text-slate-600">{label}</div>
+      <div className="num text-3xl font-bold text-slate-900">{value}</div>
     </div>
   )
 }

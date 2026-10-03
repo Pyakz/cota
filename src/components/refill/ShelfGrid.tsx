@@ -39,18 +39,18 @@ export function ShelfGrid({
           <div
             key={i}
             className={cn(
-              'aspect-square rounded-sm',
-              state === 'existing' && 'bg-gray-500',
-              state === 'added' && 'bg-blue-600',
-              state === 'empty' && 'border border-gray-300 bg-white',
-              state === 'empty' && highlightEmpty && 'border-2 border-amber-500',
+              'aspect-square rounded-[5px]',
+              state === 'existing' && 'bg-slate-500',
+              state === 'added' && 'bg-emerald-500',
+              state === 'empty' && 'bg-slate-200',
+              state === 'empty' && highlightEmpty && 'ring-2 ring-amber-500',
             )}
           />
         ))}
       </div>
 
       {unitsPerSquare > 1 && (
-        <p className="mt-2 text-sm text-gray-600">1 square = {unitsPerSquare} units</p>
+        <p className="mt-2 text-sm text-slate-600">1 square = {unitsPerSquare} units</p>
       )}
 
       {leftoverUnits > 0 && (
@@ -60,7 +60,7 @@ export function ShelfGrid({
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {Array.from({ length: Math.ceil(leftoverUnits / unitsPerSquare) }, (_, i) => (
-              <div key={i} className="size-6 rounded-sm bg-red-600" />
+              <div key={i} className="size-6 rounded-[5px] bg-red-600" />
             ))}
           </div>
         </div>

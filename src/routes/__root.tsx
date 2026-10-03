@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { TabBar } from '../components/TabBar'
 
 import appCss from '../styles.css?url'
 
@@ -20,7 +21,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      },
+      {
+        name: 'theme-color',
+        content: '#f8fafc',
       },
       {
         title: 'CoTa Warehouse',
@@ -44,6 +49,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <TabBar />
         <TanStackDevtools
           config={{
             position: 'bottom-right',

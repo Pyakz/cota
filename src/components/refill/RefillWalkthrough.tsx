@@ -44,49 +44,63 @@ export function RefillWalkthrough({ shelf }: { shelf: WalkthroughShelf }) {
   const isLast = index === steps.length - 1
 
   return (
-    <section className="mt-6 space-y-5">
-      <div>
-        <div className="font-mono text-sm text-gray-600">{shelf.sku}</div>
-        <div className="text-xl font-semibold">{shelf.name}</div>
-        <div className="text-gray-700">{shelf.unitsPerCase} units per case</div>
+    <section className="mt-4 space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="font-mono text-xs text-slate-500">{shelf.sku}</div>
+        <div className="text-lg font-semibold text-slate-900">{shelf.name}</div>
+        <div className="text-sm text-slate-600">{shelf.unitsPerCase} units per case</div>
+
+        <div className="mt-4">
+          <StorageCards
+            caseLocations={caseLocations}
+            unitsPerCase={shelf.unitsPerCase}
+            openedCases={step.openedCases}
+            leftoverUnits={leftoverUnits}
+          />
+        </div>
       </div>
 
-      <StorageCards
-        caseLocations={caseLocations}
-        unitsPerCase={shelf.unitsPerCase}
-        openedCases={step.openedCases}
-        leftoverUnits={leftoverUnits}
-      />
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-baseline justify-between">
+          <p className="num text-3xl font-bold text-slate-900">
+            {shelfUnits} <span className="text-lg font-medium text-slate-400">/ {shelf.capacityUnits}</span>
+          </p>
+          <p className="num text-sm font-medium text-slate-500">
+            Step {index + 1} of {steps.length}
+          </p>
+        </div>
 
-      <div className="flex items-baseline justify-between">
-        <p className="font-mono text-3xl font-bold tabular-nums">
-          {shelfUnits} / {shelf.capacityUnits}
-        </p>
-        <p className="text-sm text-gray-600">
-          Step {index + 1} of {steps.length}
-        </p>
+        <div className="mt-3">
+          <ShelfGrid
+            capacityUnits={shelf.capacityUnits}
+            startUnits={shelf.currentUnits}
+            shelfUnits={shelfUnits}
+            leftoverUnits={leftoverUnits}
+            highlightEmpty={step.highlightEmpty}
+          />
+        </div>
       </div>
-
-      <ShelfGrid
-        capacityUnits={shelf.capacityUnits}
-        startUnits={shelf.currentUnits}
-        shelfUnits={shelfUnits}
-        leftoverUnits={leftoverUnits}
-        highlightEmpty={step.highlightEmpty}
-      />
 
       <p
         aria-live="polite"
-        className="min-h-20 rounded-md border border-gray-300 bg-gray-50 p-4 text-lg leading-snug"
+        className="min-h-20 rounded-2xl bg-white p-4 text-base leading-relaxed text-slate-800 shadow-sm ring-1 ring-slate-200"
       >
         {step.caption}
       </p>
 
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" className="h-12 text-base" onClick={startOver}>
+        <Button
+          variant="outline"
+          className="h-12 rounded-xl border-slate-300 bg-white text-base font-semibold text-slate-800 active:scale-[0.98]"
+          onClick={startOver}
+        >
           Start over
         </Button>
-        <Button className="h-12 text-base" onClick={next} disabled={animating}>
+        <Button
+          className="h-12 rounded-xl bg-slate-900 text-base font-semibold text-white hover:bg-slate-800 active:scale-[0.98] disabled:bg-slate-300"
+          onClick={next}
+          disabled={animating}
+        >
           {isLast ? 'Play again' : 'Next step'}
         </Button>
       </div>

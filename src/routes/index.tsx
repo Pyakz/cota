@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { PackageSearch, SearchX } from 'lucide-react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { PackageSearch, Search, SearchX } from 'lucide-react'
 import { useState } from 'react'
+import { AppHeader } from '../components/AppHeader'
 import { Bone } from '../components/Bone'
 import { EmptyState } from '../components/EmptyState'
 import { Skeleton } from '../components/ui/skeleton'
@@ -30,165 +31,116 @@ function InventorySearch() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-6 font-sans">
-      <h1 className="text-2xl font-bold">Inventory search</h1>
-      <nav className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-base">
-        <Link to="/replenish" search={{ sku: 'TURTLE-01' }} className="text-blue-700 underline">
-          Open-shelf replenishment →
-        </Link>
-        <Link to="/pick" search={{ req: '' }} className="text-blue-700 underline">
-          Pick list →
-        </Link>
-      </nav>
+    <>
+      <AppHeader title="Inventory" />
 
-      <form onSubmit={submit} className="mt-4 flex gap-2">
-        <input
-          type="search"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="SKU or product name"
-          aria-label="SKU or product name"
-          autoCapitalize="characters"
-          autoComplete="off"
-          className="h-12 min-w-0 flex-1 rounded-md border border-gray-400 bg-white px-3 text-lg"
-        />
-        <button
-          type="submit"
-          className="h-12 rounded-md bg-gray-900 px-5 text-lg font-semibold text-white"
-        >
-          Search
-        </button>
-      </form>
+      <main className="mx-auto max-w-xl px-4 pt-4 pb-28">
+        <form onSubmit={submit} role="search" className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-400" aria-hidden />
+          <input
+            type="search"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="SKU or product name"
+            aria-label="SKU or product name"
+            autoCapitalize="characters"
+            autoComplete="off"
+            enterKeyHint="search"
+            className="h-12 w-full rounded-xl border border-slate-300 bg-white pr-4 pl-11 text-base shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+          />
+        </form>
 
-      {results.length === 0 && q !== '' && (
-        <EmptyState icon={SearchX} title={`No products match “${q}”`}>
-          Check the SKU, or try part of the product name.
-        </EmptyState>
-      )}
+        {results.length === 0 && q !== '' && (
+          <EmptyState icon={SearchX} title={`No products match “${q}”`}>
+            Check the SKU, or try part of the product name.
+          </EmptyState>
+        )}
 
-      {results.length === 0 && q === '' && (
-        <EmptyState icon={PackageSearch} title="No products yet">
-          Products show up here once they have been added to the system.
-        </EmptyState>
-      )}
+        {results.length === 0 && q === '' && (
+          <EmptyState icon={PackageSearch} title="No products yet">
+            Products show up here once they have been added to the system.
+          </EmptyState>
+        )}
 
-      <ul className="mt-6 space-y-4">
-        {results.map((r) => (
-          <li key={r.sku} className="rounded-lg border border-gray-300 bg-white p-4">
-            <div className="font-mono text-sm text-gray-600">{r.sku}</div>
-            <div className="text-xl font-semibold">{r.name}</div>
-            <div className="text-gray-700">{r.unitsPerCase} units per case</div>
+        <ul className="mt-4 space-y-3">
+          {results.map((r) => (
+            <li key={r.sku} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-mono text-xs text-slate-500">{r.sku}</div>
+                  <div className="truncate text-lg font-semibold text-slate-900">{r.name}</div>
+                  <div className="text-sm text-slate-600">{r.unitsPerCase} units per case</div>
+                </div>
+              </div>
 
-            <table className="mt-3 w-full text-left text-base">
-              <thead className="text-sm text-gray-600">
-                <tr>
-                  <th className="py-1 font-medium">Location</th>
-                  <th className="py-1 text-right font-medium">Cases</th>
-                </tr>
-              </thead>
-              <tbody>
-                {r.locations.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="py-2 text-gray-600">
-                      No stock on record.
-                    </td>
-                  </tr>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Stat label="Cases" value={r.totalCases} />
+                <Stat label="Units" value={r.totalUnits} />
+              </div>
+
+              <div className="mt-4">
+                <div className="text-xs font-semibold tracking-wider text-slate-500 uppercase">Locations</div>
+                {r.locations.length === 0 ? (
+                  <p className="mt-2 text-sm text-slate-600">No stock on record.</p>
+                ) : (
+                  <ul className="mt-1 divide-y divide-slate-100">
+                    {r.locations.map((l) => (
+                      <li key={l.location} className="flex items-center justify-between py-2.5">
+                        <span className="font-mono text-sm text-slate-800">{l.location}</span>
+                        <span className="num text-base font-semibold text-slate-900">
+                          {l.cases} <span className="text-sm font-normal text-slate-500">cs</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-                {r.locations.map((l) => (
-                  <tr key={l.location} className="border-t border-gray-200">
-                    <td className="py-2 font-mono">{l.location}</td>
-                    <td className="py-2 text-right tabular-nums">{l.cases}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </main>
+    </>
+  )
+}
 
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-gray-100 p-3">
-              <div>
-                <div className="text-sm text-gray-600">Total cases</div>
-                <div className="text-2xl font-bold tabular-nums">{r.totalCases}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Total units</div>
-                <div className="text-2xl font-bold tabular-nums">{r.totalUnits}</div>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-slate-100 px-3 py-2.5">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="num text-2xl font-bold text-slate-900">{value}</div>
+    </div>
   )
 }
 
 // Same markup as the page, with text replaced by placeholders, so the layout doesn't move when data arrives.
 function SearchSkeleton() {
   return (
-    <main aria-busy="true" className="mx-auto max-w-xl px-4 py-6 font-sans">
-      <span className="sr-only">Loading</span>
-      <h1 className="text-2xl font-bold">
-        <Bone w="w-56" />
-      </h1>
-      <nav className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-base">
-        <Bone w="w-56" />
-        <Bone w="w-32" />
-      </nav>
+    <>
+      <AppHeader title={<Bone w="w-28" />} />
+      <main aria-busy="true" className="mx-auto max-w-xl px-4 pt-4 pb-28">
+        <span className="sr-only">Loading</span>
+        <Skeleton className="h-12 w-full rounded-xl bg-slate-200" />
 
-      <div className="mt-4 flex gap-2">
-        <Skeleton className="h-12 min-w-0 flex-1 bg-gray-200" />
-        <Skeleton className="h-12 w-28 bg-gray-200" />
-      </div>
-
-      <ul className="mt-6 space-y-4">
-        {[0, 1].map((i) => (
-          <li key={i} className="rounded-lg border border-gray-300 bg-white p-4">
-            <div className="font-mono text-sm text-gray-600">
-              <Bone w="w-24" />
-            </div>
-            <div className="text-xl font-semibold">
-              <Bone w="w-48" />
-            </div>
-            <div className="text-gray-700">
-              <Bone w="w-36" />
-            </div>
-
-            <table className="mt-3 w-full text-left text-base">
-              <thead className="text-sm text-gray-600">
-                <tr>
-                  <th className="py-1 font-medium">Location</th>
-                  <th className="py-1 text-right font-medium">Cases</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[0, 1].map((row) => (
-                  <tr key={row} className="border-t border-gray-200">
-                    <td className="py-2">
-                      <Bone w="w-20" />
-                    </td>
-                    <td className="py-2 text-right">
-                      <Bone w="w-8" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-gray-100 p-3">
-              <div>
-                <div className="text-sm text-gray-600">Total cases</div>
-                <div className="text-2xl font-bold">
-                  <Bone w="w-12" />
-                </div>
+        <ul className="mt-4 space-y-3">
+          {[0, 1].map((i) => (
+            <li key={i} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="font-mono text-xs text-slate-500">
+                <Bone w="w-20" />
               </div>
-              <div>
-                <div className="text-sm text-gray-600">Total units</div>
-                <div className="text-2xl font-bold">
-                  <Bone w="w-16" />
-                </div>
+              <div className="text-lg font-semibold">
+                <Bone w="w-48" />
               </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
+              <div className="text-sm text-slate-600">
+                <Bone w="w-32" />
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Skeleton className="h-16 rounded-xl bg-slate-200" />
+                <Skeleton className="h-16 rounded-xl bg-slate-200" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </main>
+    </>
   )
 }

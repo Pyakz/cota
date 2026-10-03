@@ -34,7 +34,7 @@ export function RouteMap({ aisles, pickedAisles, waypoints, distance, reached }:
       viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
       role="img"
       aria-label="Warehouse map with the pick route"
-      className="w-full rounded-lg border border-gray-300 bg-white"
+      className="w-full rounded-2xl border border-slate-200 bg-white shadow-sm"
     >
       <rect x={0} y={CORRIDOR_Y - 7} width={MAP_WIDTH} height={14} className="fill-gray-100" />
 

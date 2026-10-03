@@ -17,8 +17,8 @@ export function StorageCards({
 
   return (
     <section aria-label="Storage cases">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-600">Storage</h2>
-      <ul className="mt-2 flex flex-wrap gap-2">
+      <h2 className="text-xs font-semibold tracking-wider text-slate-500 uppercase">Storage</h2>
+      <ul className="mt-2 flex gap-2 overflow-x-auto pb-1">
         {caseLocations.map((location, i) => {
           const opened = i < openedCases
           const leftover = opened && leftoverUnits > 0 && i === caseLocations.length - 1
@@ -27,19 +27,19 @@ export function StorageCards({
             <li
               key={i}
               className={cn(
-                'flex h-20 w-20 flex-col items-center justify-center rounded-md border-2 text-center',
-                !opened && 'border-gray-400 bg-white text-gray-900',
-                opened && !leftover && 'border-dashed border-gray-300 bg-gray-50 text-gray-500',
-                leftover && 'border-red-400 bg-red-50 text-red-800',
+                'flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl text-center',
+                !opened && 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200',
+                opened && !leftover && 'bg-slate-100 text-slate-500',
+                leftover && 'bg-amber-50 text-amber-900 ring-1 ring-amber-300',
               )}
             >
               <Package className="size-5" aria-hidden />
-              <span className="mt-1 font-mono text-lg font-semibold tabular-nums">
+              <span className="num text-base font-semibold">
                 {!opened && unitsPerCase}
                 {opened && !leftover && 'opened'}
                 {leftover && `${leftoverUnits} left`}
               </span>
-              <span className="font-mono text-[11px] leading-none">{location}</span>
+              <span className="font-mono text-[11px] leading-none text-slate-500">{location}</span>
             </li>
           )
         })}
